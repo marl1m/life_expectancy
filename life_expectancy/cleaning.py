@@ -2,8 +2,6 @@
 
 import argparse
 import pandas as pd
-from . import OUTPUT_DIR
-from life_expectancy.constants import DATA_PATH, DATA_FOLDER, OUTPUT_PATH
 
 def load_data(path: str) -> pd.DataFrame:
     """Load data from CSV file."""
@@ -51,15 +49,8 @@ def save_data(df: pd.DataFrame, output_path: str) -> None:
     """Save DataFrame to CSV."""
     df.to_csv(output_path, index=False)
 
-def main(country: str) -> None:
+def main(country = "PT") -> None:
     """Main function calling the cleaning functions."""
-    df = load_data(DATA_PATH)
-    cleaned_df = clean_data(df, country)
-    output_path = OUTPUT_PATH.format(country=country.lower())
-    save_data(cleaned_df, output_path)
-
-
-if __name__ == "__main__":  # pragma: no cover
     parser = argparse.ArgumentParser(description="Clean life expectancy data.")
     parser.add_argument(
         "--country",
@@ -67,6 +58,19 @@ if __name__ == "__main__":  # pragma: no cover
         default="PT",
         help="ISO country code to filter on (default: PT)"
     )
+    parser.add_argument(
+        "--data-path",
+        type=str,
+        default="./life_expectancy/data/eu_life_expectancy_raw.tsv",
+        help="Path to the raw data file"
+    )
+    args = parser.parse_args()
+    df = load_data(args.data_path)
+    df_clean = clean_data(df)
+    save_data(df_clean, args.country)
 
     args = parser.parse_args()
-    main(args.country.upper())
+
+
+if __name__ == "__main__":  # pragma: no cover
+    main()
