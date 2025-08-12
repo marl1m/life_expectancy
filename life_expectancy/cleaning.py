@@ -3,7 +3,7 @@
 import argparse
 import pandas as pd
 from . import OUTPUT_DIR
-from life_expectancy.constants import DATA_PATH, OUTPUT_PATH
+from life_expectancy.constants import DATA_PATH, DATA_FOLDER, OUTPUT_PATH
 
 def load_data(path: str) -> pd.DataFrame:
     """Load data from CSV file."""
@@ -13,7 +13,7 @@ def load_data(path: str) -> pd.DataFrame:
 
 def clean_data(df: pd.DataFrame, country: str) -> pd.DataFrame:
     """Clean data and filter by country."""
-    print(df)
+
     df[['unit', 'sex', 'age', 'geo']] = df.iloc[:, 0].str.split(',', expand=True)
 
     df = df.drop(columns=df.columns[0])
@@ -55,7 +55,7 @@ def main(country: str) -> None:
     """Main function calling the cleaning functions."""
     df = load_data(DATA_PATH)
     cleaned_df = clean_data(df, country)
-    output_path = OUTPUT_DIR.format(country=country.lower())
+    output_path = OUTPUT_PATH.format(country=country.lower())
     save_data(cleaned_df, output_path)
 
 
