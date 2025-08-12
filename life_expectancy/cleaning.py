@@ -2,21 +2,17 @@
 
 import argparse
 import pandas as pd
-
-DATA_PATH = '/Users/marlim/dd_lp_foundations_assignments/assignments/life_expectancy/data/eu_life_expectancy_raw.tsv'
-#"./life_expectancy/data/eu_life_expectancy_raw.tsv"
-OUTPUT_DIR = '/Users/marlim/dd_lp_foundations_assignments/assignments/life_expectancy/data/{country}_life_expectancy.csv'
-#"./life_expectancy/data/{country}_life_expectancy.csv"
-
+from life_expectancy.constants import *
 
 def load_data(path: str) -> pd.DataFrame:
     """Load data from CSV file."""
-    return pd.read_csv(path, sep="\t")
+    data = pd.read_csv(path, sep="\t")
+    return data 
 
 
 def clean_data(df: pd.DataFrame, country: str) -> pd.DataFrame:
     """Clean data and filter by country."""
-    
+    print(df)
     df[['unit', 'sex', 'age', 'geo']] = df.iloc[:, 0].str.split(',', expand=True)
 
     df = df.drop(columns=df.columns[0])
