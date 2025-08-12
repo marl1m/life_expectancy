@@ -2,7 +2,8 @@
 
 import argparse
 import pandas as pd
-from life_expectancy.constants import DATA_PATH, OUTPUT_DIR
+from . import OUTPUT_DIR
+from life_expectancy.constants import DATA_PATH
 
 def load_data(path: str) -> pd.DataFrame:
     """Load data from CSV file."""

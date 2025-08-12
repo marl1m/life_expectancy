@@ -10,5 +10,5 @@ BASE_DIR = Path("/Users/marlim/dd_lp_foundations_assignments/assignments/life_ex
 DATA_PATH = BASE_DIR / "eu_life_expectancy_raw.tsv"
 
 # Output file pattern (format with .format(country=...))
-OUTPUT_DIR = BASE_DIR / "{country}_life_expectancy.csv"
+#OUTPUT_DIR = BASE_DIR / "{country}_life_expectancy.csv"
 #"./life_expectancy/data/{country}_life_expectancy.csv"
