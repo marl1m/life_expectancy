@@ -2,12 +2,12 @@
 
 import argparse
 import pandas as pd
-from life_expectancy.constants import *
+from life_expectancy.constants import DATA_PATH, OUTPUT_DIR
 
 def load_data(path: str) -> pd.DataFrame:
     """Load data from CSV file."""
     data = pd.read_csv(path, sep="\t")
-    return data 
+    return data
 
 
 def clean_data(df: pd.DataFrame, country: str) -> pd.DataFrame:
@@ -49,9 +49,9 @@ def clean_data(df: pd.DataFrame, country: str) -> pd.DataFrame:
 def save_data(df: pd.DataFrame, output_path: str) -> None:
     """Save DataFrame to CSV."""
     df.to_csv(output_path, index=False)
-    
 
 def main(country: str) -> None:
+    """Main function calling the cleaning functions."""
     df = load_data(DATA_PATH)
     cleaned_df = clean_data(df, country)
     output_path = OUTPUT_DIR.format(country=country.lower())
