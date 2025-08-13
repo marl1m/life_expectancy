@@ -66,7 +66,7 @@ def main(country = "PT") -> None:
     parser.add_argument(
         "--raw-data-path",
         type=str,
-        default= str(OUTPUT_DIR / "/eu_life_expectancy_raw.tsv"),
+        default= str(OUTPUT_DIR / "eu_life_expectancy_raw.tsv"),
         help="Path to the raw data file"
     )
     
