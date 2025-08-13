@@ -22,18 +22,18 @@ def test_clean_data(pt_life_expectancy_expected):
     
     
 
-def test_main(monkeypatch, tmp_path, pt_life_expectancy_expected):
+def test_main(monkeypatch, pt_life_expectancy_expected):
 
     input_file = OUTPUT_DIR / "eu_life_expectancy_raw.tsv"
-    output_file = tmp_path / "pt_life_expectancy.csv"
+    output_file = OUTPUT_DIR / "pt_life_expectancy.csv"
 
     monkeypatch.setattr(sys, "argv", [
         "prog",
         "--country", "PT",
         "--raw-data-path", str(input_file),
-        "--data-path", str(tmp_path)
+        "--data-path", str(OUTPUT_DIR)
     ])
-    monkeypatch.setattr(cleaning, "OUTPUT_DIR", tmp_path)
+    monkeypatch.setattr(cleaning, "OUTPUT_DIR", OUTPUT_DIR)
 
     cleaning.main(country = "PT")
 
