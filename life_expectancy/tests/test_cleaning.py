@@ -7,19 +7,19 @@ from . import OUTPUT_DIR
 def test_clean_data(pt_life_expectancy_expected):
     """Run the `clean_data` function and compare the output to the expected output"""
 
-    save_data(
-        clean_data(
-            load_data(
-                str(OUTPUT_DIR.parent / "data" / "eu_life_expectancy_raw.tsv")),
-            country='PT'), 
-        OUTPUT_DIR)
+    
+    data = load_data(str(OUTPUT_DIR / "eu_life_expectancy_raw.tsv"))
 
-    pt_life_expectancy_actual = pd.read_csv(OUTPUT_DIR / "pt_life_expectancy.csv")
+    data = clean_data(data, country='PT')
+    
+    save_data(data, OUTPUT_DIR / "pt_life_expectancy.csv")
+
+    pt_life_expectancy_actual = pd.read_csv(str(OUTPUT_DIR / "pt_life_expectancy.csv"))
     pd.testing.assert_frame_equal(
         pt_life_expectancy_actual, pt_life_expectancy_expected
     )
 
-''' proper proper backbone of testing
+''' proper backbone of testing
 def test_load_data(tmp_path):
     # Arrange
     sample_data = "col1\tcol2\n1\t2\n3\t4\n"
