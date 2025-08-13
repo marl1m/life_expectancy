@@ -79,7 +79,7 @@ def main(country = "PT") -> None:
 
     args = parser.parse_args()
     df = load_data(args.raw_data_path)
-    df_clean = clean_data(df)
+    df_clean = clean_data(df, country)
     save_data(df_clean, args.data_path / f"{country}_life_expectancy.csv")
 
     args = parser.parse_args()

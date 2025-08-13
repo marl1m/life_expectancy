@@ -1,23 +1,46 @@
 """Tests for the cleaning module"""
-import pandas as pd
 
-from life_expectancy.cleaning import *
+import sys
+import pandas as pd
+from life_expectancy import cleaning
 from . import OUTPUT_DIR
 
 def test_clean_data(pt_life_expectancy_expected):
     """Run the `clean_data` function and compare the output to the expected output"""
-
     
-    data = load_data(str(OUTPUT_DIR / "eu_life_expectancy_raw.tsv"))
-
-    data = clean_data(data, country='PT')
-    
-    save_data(data, OUTPUT_DIR / "pt_life_expectancy.csv")
+    cleaning.save_data(
+        (cleaning.clean_data(
+            (cleaning.load_data(
+                str(OUTPUT_DIR / "eu_life_expectancy_raw.tsv"))),
+            country='PT')),
+        OUTPUT_DIR / "pt_life_expectancy.csv")
 
     pt_life_expectancy_actual = pd.read_csv(str(OUTPUT_DIR / "pt_life_expectancy.csv"))
     pd.testing.assert_frame_equal(
         pt_life_expectancy_actual, pt_life_expectancy_expected
     )
+    
+    
+
+def test_main(monkeypatch, tmp_path, pt_life_expectancy_expected):
+
+    input_file = OUTPUT_DIR / "eu_life_expectancy_raw.tsv"
+    output_file = tmp_path / "pt_life_expectancy.csv"
+
+    monkeypatch.setattr(sys, "argv", [
+        "prog",
+        "--country", "PT",
+        "--raw-data-path", str(input_file),
+        "--data-path", str(tmp_path)
+    ])
+    monkeypatch.setattr(cleaning, "OUTPUT_DIR", tmp_path)
+
+    cleaning.main(country = "PT")
+
+    assert output_file.exists()
+    df_saved = pd.read_csv(output_file)
+    pd.testing.assert_frame_equal(df_saved, pt_life_expectancy_expected)
+
 
 ''' proper backbone of testing
 def test_load_data(tmp_path):
@@ -77,5 +100,3 @@ def test_main(tmp_path, monkeypatch, pt_life_expectancy_raw, pt_life_expectancy_
     pd.testing.assert_frame_equal(saved_df, pt_life_expectancy_expected)
 
 '''
-
-
