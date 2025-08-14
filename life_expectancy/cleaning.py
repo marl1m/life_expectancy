@@ -1,8 +1,8 @@
 """ Data cleaning utilities for life expectancy project. """
 
 import argparse
-import pandas as pd
 from pathlib import Path
+import pandas as pd
 
 PROJECT_DIR = Path(__file__).parents[1]
 PACKAGE_DIR = PROJECT_DIR / "life_expectancy"
@@ -55,55 +55,29 @@ def save_data(df: pd.DataFrame, output_path) -> None:
     """Save DataFrame to CSV."""
     df.to_csv(output_path, index=False)
 
-'''
-def main(country = "PT") -> None:
-    """Main function calling the cleaning functions."""
-    parser = argparse.ArgumentParser(description="Clean life expectancy data.")
 
-    parser.add_argument(
-        "--country",
-        type=str,
-        default="PT",
-        help="ISO country code to filter on (default: PT)"
-    )
-
-    parser.add_argument(
-        "--raw-data-path",
-        type=str,
-        default= str(OUTPUT_DIR / "eu_life_expectancy_raw.tsv"),
-        help="Path to the raw data file"
-    )
-    
-    parser.add_argument(
-        "--data-path",
-        type=Path,
-        default=OUTPUT_DIR,
-        help="Path to the data folder"
-    )
-
-    args = parser.parse_args()
-    df = load_data(args.raw_data_path)
-    df_clean = clean_data(df, args.country)
-    save_data(df_clean, args.data_path / f"{args.country}_life_expectancy.csv")
-'''
-
-def run_funcs(country, raw_data_path, data_path):
-    
+def run_cleaning(country, raw_data_path, data_path):
+    """Calling of all cleaning functions to insert into main."""
     df = load_data(raw_data_path)
     df_clean = clean_data(df, country)
     save_data(df_clean, data_path / f"{country}_life_expectancy.csv")
 
 def main():
+    """Main script function where all functions and args are called."""
     parser = argparse.ArgumentParser(description="Clean life expectancy data.")
-    
-    parser.add_argument("--country", type=str, default="PT")
-    parser.add_argument("--raw-data-path", type=str, default=str(OUTPUT_DIR / "eu_life_expectancy_raw.tsv"))
-    parser.add_argument("--data-path", type=Path, default=OUTPUT_DIR)
+
+    parser.add_argument("--country",
+                        type=str,
+                        default="PT")
+    parser.add_argument("--raw-data-path",
+                        type=str,
+                        default=str(OUTPUT_DIR / "eu_life_expectancy_raw.tsv"))
+    parser.add_argument("--data-path",
+                        type=Path,
+                        default=OUTPUT_DIR)
     args = parser.parse_args()
-    
-    run_funcs(args.country, args.raw_data_path, args.data_path)
 
-
+    run_cleaning(args.country, args.raw_data_path, args.data_path)
 
 if __name__ == "__main__":  # pragma: no cover
     main()
