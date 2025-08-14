@@ -32,27 +32,23 @@ def test_clean_data():
     
 def test_main(monkeypatch, tmp_path, pt_life_expectancy_expected):
 
-    # Copy raw data into tmp_path
-    source_file = Path("data/eu_life_expectancy_raw.tsv")
-    input_file = tmp_path / "eu_life_expectancy_raw.tsv"
-    shutil.copy(source_file, input_file)
+    input_file = OUTPUT_DIR / "eu_life_expectancy_raw.tsv"
+    output_file = tmp_path / "pt_life_expectancy.csv"
 
-    output_file = tmp_path / "PT_life_expectancy.csv"
-
-    # Patch sys.argv only
     monkeypatch.setattr(sys, "argv", [
         "prog",
         "--country", "PT",
         "--raw-data-path", str(input_file),
         "--data-path", str(tmp_path)
     ])
+    monkeypatch.setattr(cleaning, "OUTPUT_DIR", tmp_path)
 
-    # Now call main with no args
     cleaning.main()
 
     assert output_file.exists()
     df_saved = pd.read_csv(output_file)
     pd.testing.assert_frame_equal(df_saved, pt_life_expectancy_expected)
+
 
 ''' proper backbone of testing
 def test_load_data(tmp_path):
