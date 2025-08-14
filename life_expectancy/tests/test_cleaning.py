@@ -1,11 +1,13 @@
 """Tests for the cleaning module"""
 
-import sys
+import shutil
 import pandas as pd
+import sys
 from life_expectancy import cleaning
-from . import OUTPUT_DIR
+from pathlib import Path
+from . import OUTPUT_DIR, FIXTURES_DIR
 
-def test_clean_data(pt_life_expectancy_expected):
+def test_clean_data():
     """Run the `clean_data` function and compare the output to the expected output"""
     
     cleaning.save_data(
@@ -15,32 +17,42 @@ def test_clean_data(pt_life_expectancy_expected):
             country='PT')),
         OUTPUT_DIR / "pt_life_expectancy.csv")
 
-    pt_life_expectancy_actual = pd.read_csv(str(OUTPUT_DIR / "pt_life_expectancy.csv"))
+    output_saved_data = OUTPUT_DIR / "pt_life_expectancy.csv"
+    expected_output_data = FIXTURES_DIR / "pt_life_expectancy_expected.csv"
+    
+    assert output_saved_data.exists()
+    assert expected_output_data.exists()
+        
+    pt_life_expectancy_actual = pd.read_csv(str(output_saved_data))
+    pt_life_expectancy_expected = pd.read_csv(str(expected_output_data))
+
     pd.testing.assert_frame_equal(
         pt_life_expectancy_actual, pt_life_expectancy_expected
     )
     
-    
+def test_main(monkeypatch, tmp_path, pt_life_expectancy_expected):
 
-def test_main(monkeypatch, pt_life_expectancy_expected):
+    # Copy raw data into tmp_path
+    source_file = Path("data/eu_life_expectancy_raw.tsv")
+    input_file = tmp_path / "eu_life_expectancy_raw.tsv"
+    shutil.copy(source_file, input_file)
 
-    input_file = OUTPUT_DIR / "eu_life_expectancy_raw.tsv"
-    output_file = OUTPUT_DIR / "pt_life_expectancy.csv"
+    output_file = tmp_path / "PT_life_expectancy.csv"
 
+    # Patch sys.argv only
     monkeypatch.setattr(sys, "argv", [
         "prog",
         "--country", "PT",
         "--raw-data-path", str(input_file),
-        "--data-path", str(OUTPUT_DIR)
+        "--data-path", str(tmp_path)
     ])
-    monkeypatch.setattr(cleaning, "OUTPUT_DIR", OUTPUT_DIR)
 
-    cleaning.main(country = "PT")
+    # Now call main with no args
+    cleaning.main()
 
     assert output_file.exists()
     df_saved = pd.read_csv(output_file)
     pd.testing.assert_frame_equal(df_saved, pt_life_expectancy_expected)
-
 
 ''' proper backbone of testing
 def test_load_data(tmp_path):

@@ -4,7 +4,10 @@ import argparse
 import pandas as pd
 from pathlib import Path
 
-from . import OUTPUT_DIR
+PROJECT_DIR = Path(__file__).parents[1]
+PACKAGE_DIR = PROJECT_DIR / "life_expectancy"
+FIXTURES_DIR = Path(__file__).parent / "fixtures"
+OUTPUT_DIR = PACKAGE_DIR / "data"
 
 def load_data(path: str) -> pd.DataFrame:
     """Load data from CSV file."""
@@ -52,6 +55,7 @@ def save_data(df: pd.DataFrame, output_path) -> None:
     """Save DataFrame to CSV."""
     df.to_csv(output_path, index=False)
 
+'''
 def main(country = "PT") -> None:
     """Main function calling the cleaning functions."""
     parser = argparse.ArgumentParser(description="Clean life expectancy data.")
@@ -73,7 +77,7 @@ def main(country = "PT") -> None:
     parser.add_argument(
         "--data-path",
         type=Path,
-        default=(OUTPUT_DIR),
+        default=OUTPUT_DIR,
         help="Path to the data folder"
     )
 
@@ -81,8 +85,24 @@ def main(country = "PT") -> None:
     df = load_data(args.raw_data_path)
     df_clean = clean_data(df, args.country)
     save_data(df_clean, args.data_path / f"{args.country}_life_expectancy.csv")
+'''
 
+def run_funcs(country, raw_data_path, data_path):
+    
+    df = load_data(raw_data_path)
+    df_clean = clean_data(df, country)
+    save_data(df_clean, data_path / f"{country}_life_expectancy.csv")
+
+def main():
+    parser = argparse.ArgumentParser(description="Clean life expectancy data.")
+    
+    parser.add_argument("--country", type=str, default="PT")
+    parser.add_argument("--raw-data-path", type=str, default=str(OUTPUT_DIR / "eu_life_expectancy_raw.tsv"))
+    parser.add_argument("--data-path", type=Path, default=OUTPUT_DIR)
     args = parser.parse_args()
+    
+    run_funcs(args.country, args.raw_data_path, args.data_path)
+
 
 
 if __name__ == "__main__":  # pragma: no cover
