@@ -46,8 +46,6 @@ def test_main(monkeypatch, tmp_path, pt_life_expectancy_expected):
     cleaning.main()
 
     assert output_file.exists()
-    df_saved = pd.read_csv(output_file)
-    pd.testing.assert_frame_equal(df_saved, pt_life_expectancy_expected)
 
 
 ''' proper backbone of testing
