@@ -3,8 +3,9 @@ name = "life_expectancy"
 version = "0.1.0"
 
 description = "First assignment of the Foundations Learning Path"
-authors = [{name = "Martim Serra<martim.c.serra@gmail.com>"}]
-
+authors = [
+    {name = "Martim Serra", email = "martim.c.serra@gmail.com"}
+]       
 dependencies = ["pandas", "argparse"]
 
 readme = "README.md"

@@ -1,39 +1,23 @@
 """ Data cleaning utilities for life expectancy project. """
 
 import argparse
+from pathlib import Path
 import pandas as pd
 
-DATA_PATH = "./life_expectancy/data/eu_life_expectancy_raw.tsv"
-OUTPUT_DIR = "./life_expectancy/data/{country}_life_expectancy.csv"
+PROJECT_DIR = Path(__file__).parents[1]
+PACKAGE_DIR = PROJECT_DIR / "life_expectancy"
+FIXTURES_DIR = Path(__file__).parent / "fixtures"
+OUTPUT_DIR = PACKAGE_DIR / "data"
 
-def clean_data(path, country = 'PT'):
+def load_data(path: str) -> pd.DataFrame:
+    """Load data from CSV file."""
+    data = pd.read_csv(path, sep="\t")
+    return data
 
-    """
-    Loads and cleans a TSV file containing life expectancy data.
 
-    Steps:
-    1. Reads a tab-separated file from the given path.
-    2. Splits the first column into four columns: 'unit', 'sex', 'age', and 'geo'.
-    3. Converts wide-format year columns into a long-format 'year'-'value' structure.
-    4. Renames 'geo' to 'region'.
-    5. Converts 'year' to int and 'value' to float, coercing invalid entries to NaN.
-    6. Filters rows to keep only valid numerical values and data for Portugal ('PT').
-    7. Drops the first column, resets the index, and exports the result to CSV.
-    
-    The cleaned CSV is saved to: './data/pt_life_expectancy.csv'
+def clean_data(df: pd.DataFrame, country: str) -> pd.DataFrame:
+    """Clean data and filter by country."""
 
-    Args:
-        path (str): Path to the TSV file to be processed.
-
-    Returns:
-        pandas.DataFrame: Cleaned and filtered DF containing life expectancy data for Portugal.
-        
-    """
-
-    # i
-    df = pd.read_csv(path, sep="\t")
-
-    # ii
     df[['unit', 'sex', 'age', 'geo']] = df.iloc[:, 0].str.split(',', expand=True)
 
     df = df.drop(columns=df.columns[0])
@@ -47,10 +31,7 @@ def clean_data(path, country = 'PT'):
 
     df_melted.rename(columns={"geo": "region"}, inplace=True)
 
-    # iii to v
-    df_melted.year.astype(int)
-    # df_melted['value'] = pd.to_numeric(df_melted['value'], errors='coerce')
-
+    df_melted.year = df_melted.year.astype(int)
 
     df_melted = df_melted[df_melted['value'] != ': ']
     df_melted['value'] = pd.to_numeric(
@@ -62,22 +43,41 @@ def clean_data(path, country = 'PT'):
         (df_melted['region'] == country)
     ]
 
-    # vi
     data.reset_index(drop=True, inplace=True)
 
-    output_path = OUTPUT_DIR.format(country=country.lower())
-    data.to_csv(output_path, index=False)
+    if "country" in df.columns:
+        data = data[data["country"] == country]
 
     return data
 
-if __name__ == "__main__":  # pragma: no cover
-    parser = argparse.ArgumentParser(description="Clean life expectancy data.")
-    parser.add_argument(
-        "--country",
-        type=str,
-        default="PT",
-        help="ISO country code to filter on (default: PT)"
-    )
 
+def save_data(df: pd.DataFrame, output_path) -> None:
+    """Save DataFrame to CSV."""
+    df.to_csv(output_path, index=False)
+
+
+def run_cleaning(country, raw_data_path, data_path):
+    """Calling of all cleaning functions to insert into main."""
+    df = load_data(raw_data_path)
+    df_clean = clean_data(df, country)
+    save_data(df_clean, data_path / f"{country}_life_expectancy.csv")
+
+def main():
+    """Main script function where all functions and args are called."""
+    parser = argparse.ArgumentParser(description="Clean life expectancy data.")
+
+    parser.add_argument("--country",
+                        type=str,
+                        default="PT")
+    parser.add_argument("--raw-data-path",
+                        type=str,
+                        default=str(OUTPUT_DIR / "eu_life_expectancy_raw.tsv"))
+    parser.add_argument("--data-path",
+                        type=Path,
+                        default=OUTPUT_DIR)
     args = parser.parse_args()
-    clean_data(DATA_PATH, country=args.country.upper())
+
+    run_cleaning(args.country, args.raw_data_path, args.data_path)
+
+if __name__ == "__main__":  # pragma: no cover
+    main()
