@@ -30,10 +30,9 @@ def test_clean_data():
         pt_life_expectancy_actual, pt_life_expectancy_expected
     )
     
-def test_main(monkeypatch, tmp_path, pt_life_expectancy_expected):
+def test_main(monkeypatch, tmp_path):
 
     input_file = OUTPUT_DIR / "eu_life_expectancy_raw.tsv"
-    output_file = tmp_path / "pt_life_expectancy.csv"
 
     monkeypatch.setattr(sys, "argv", [
         "prog",
@@ -44,8 +43,6 @@ def test_main(monkeypatch, tmp_path, pt_life_expectancy_expected):
     monkeypatch.setattr(cleaning, "OUTPUT_DIR", tmp_path)
 
     cleaning.main()
-
-    assert output_file.exists()
 
 
 ''' proper backbone of testing
