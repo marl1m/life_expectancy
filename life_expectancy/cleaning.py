@@ -3,67 +3,179 @@
 import argparse
 from pathlib import Path
 import pandas as pd
+from pandas.errors import EmptyDataError
 
 PROJECT_DIR = Path(__file__).parents[1]
 PACKAGE_DIR = PROJECT_DIR / "life_expectancy"
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 OUTPUT_DIR = PACKAGE_DIR / "data"
 
-def load_data(path: str) -> pd.DataFrame:
-    """Load data from CSV file."""
-    data = pd.read_csv(path, sep="\t")
+def load_data(path: str | Path, sep: str = "\t") -> pd.DataFrame:
+    """
+    Load a text, CSV, or Excel data file into a DataFrame.
+
+    Parameters
+    ----------
+    path : str or Path
+        File path to the raw data file (.txt, .csv, .xlsx, .tsv).
+    sep : str, optional
+        Column separator used for .txt, .csv, .tsv files (default is tab).
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame containing the loaded data.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the file does not exist.
+    ValueError
+        If the path is not a file or has an unsupported extension.
+    EmptyDataError
+        If the file exists but contains no data.
+    """
+    path = Path(path)
+    if not path.exists():
+        raise FileNotFoundError(f"Data file not found: {path}")
+    
+    if not path.is_file():
+        raise ValueError(f"Path is not a file: {path}")
+    
+    if path.suffix.lower() not in {".txt", ".csv", ".xlsx", ".tsv"}:
+        raise ValueError(f"Unsupported file extension: {path.suffix} "
+                         f"(allowed: .txt, .csv, .xlsx, .tsv)")
+
+    try:
+        if path.suffix.lower() == ".xlsx":
+            data = pd.read_excel(path)
+        else:  # .txt .csv or .tsv
+            data = pd.read_csv(path, sep=sep)
+    except Exception as e:
+        raise ValueError(f"Failed to parse data from {path}: {e}")
+
+    if data.empty:
+        raise EmptyDataError(f"Data file is empty: {path}")
+
     return data
 
 
+
 def clean_data(df: pd.DataFrame, country: str) -> pd.DataFrame:
-    """Clean data and filter by country."""
+    """
+    Transform and clean a raw Eurostat-style dataset, keeping only valid rows for a given country.
 
-    df[['unit', 'sex', 'age', 'geo']] = df.iloc[:, 0].str.split(',', expand=True)
+    The input DataFrame is expected to have its first column containing comma-separated 
+    metadata fields (unit, sex, age, geo), followed by year columns with string values. 
+    This function:
+    - Splits the first column into explicit metadata columns.
+    - Converts the data from wide to long format.
+    - Renames 'geo' to 'region' and casts 'year' to int.
+    - Removes missing or placeholder values (': ') and coerces numeric types.
+    - Filters rows by the specified country/region code.
+    - Resets the index for the cleaned dataset.
 
-    df = df.drop(columns=df.columns[0])
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Raw input data with the first column containing comma-separated metadata 
+        and subsequent columns containing year values.
+    country : str
+        ISO or region code used to filter the cleaned dataset.
 
-    df_melted = pd.melt(
-                    df,
+    Returns
+    -------
+    pd.DataFrame
+        A cleaned, long-format DataFrame containing only rows corresponding 
+        to the given country, with numeric 'value' column.
+    """
+
+    data = df.copy()
+    
+    data[['unit', 'sex', 'age', 'geo']] = data.iloc[:, 0].str.split(',', expand=True)
+
+    data.drop(columns=data.columns['unit,sex,age,geo\time'], inplace = True)
+
+    data_melted = pd.melt(
+                    data,
                     id_vars=['unit', 'sex', 'age', 'geo'],
                     var_name='year',
                     value_name='value'
     )
 
-    df_melted.rename(columns={"geo": "region"}, inplace=True)
+    data_melted.rename(columns={"geo": "region"}, inplace=True)
 
-    df_melted.year = df_melted.year.astype(int)
+    data_melted['year'] = data_melted['year'].astype(int)
 
-    df_melted = df_melted[df_melted['value'] != ': ']
-    df_melted['value'] = pd.to_numeric(
-                            df_melted['value'].str.replace(
+    data_melted = data_melted[data_melted['value'] != ': ']
+    
+    data_melted['value'] = pd.to_numeric(
+                            data_melted['value'].str.replace(
                                 r'[^0-9.]', '', regex=True), errors='coerce')
 
-    data = df_melted[
-        (~df_melted['value'].isna()) &
-        (df_melted['region'] == country)
+    data_cleaned = data_melted[
+        (~data_melted['value'].isna()) &
+        (data_melted['region'] == country)
     ]
 
-    data.reset_index(drop=True, inplace=True)
+    data_cleaned.reset_index(drop=True, inplace=True)
 
-    if "country" in df.columns:
-        data = data[data["country"] == country]
-
-    return data
+    return data_cleaned
 
 
-def save_data(df: pd.DataFrame, output_path) -> None:
-    """Save DataFrame to CSV."""
+def save_data(df: pd.DataFrame, output_path: str | Path) -> None:
+    """
+    Saves a DataFrame into a CSV file, creating parent directories if needed.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame to be saved.
+    output_path : str or pathlib.Path
+        Destination file path for the CSV. Parent directories are created 
+        automatically if they don't exist.
+
+    Returns
+    -------
+    None
+    """
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(output_path, index=False)
 
 
-def run_cleaning(country, raw_data_path, data_path):
-    """Calling of all cleaning functions to insert into main."""
+def run_cleaning(country: str, raw_data_path: str | Path, data_path: str | Path) -> None:
+    """
+    Loads the raw data, cleans it and filters it for a specific country, then saves it as CSV.
+
+    This function acts as the high-level entry point for the cleaning workflow:
+    - Loads the raw dataset from the given path.
+    - Cleans and filters it using the specified country code.
+    - Writes the cleaned data to the target directory with a standardized filename.
+
+    Parameters
+    ----------
+    country : str
+        ISO or region code to filter data on.
+    raw_data_path : str or pathlib.Path
+        Path to the raw input data file.
+    data_path : str or pathlib.Path
+        Directory where the cleaned CSV will be stored.
+
+    Returns
+    -------
+    None
+    """
     df = load_data(raw_data_path)
     df_clean = clean_data(df, country)
     save_data(df_clean, data_path / f"{country}_life_expectancy.csv")
 
 def main():
-    """Main script function where all functions and args are called."""
+    """
+    Command-line entry point for cleaning life expectancy data.
+
+    Parses command-line arguments for country code, raw data path, and output path; 
+    Runs the full cleaning workflow to produce a cleaned CSV file.
+    """
     parser = argparse.ArgumentParser(description="Clean life expectancy data.")
 
     parser.add_argument("--country",

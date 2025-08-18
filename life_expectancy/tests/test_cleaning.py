@@ -2,6 +2,9 @@
 
 import sys
 import pandas as pd
+from pandas.errors import EmptyDataError
+import pytest
+from pathlib import Path
 from life_expectancy import cleaning
 from . import OUTPUT_DIR, FIXTURES_DIR
 
@@ -44,59 +47,51 @@ def test_main(monkeypatch, tmp_path):
 
     cleaning.main()
 
-# proper backbone of testing
-# def test_load_data(tmp_path):
-#     # Arrange
-#     sample_data = "col1\tcol2\n1\t2\n3\t4\n"
-#     sample_file = tmp_path / "sample.tsv"
-#     sample_file.write_text(sample_data)
+# --------------------------
+# Parameterized tests for valid files
+# --------------------------
+@pytest.mark.parametrize("suffix, sep", [
+    (".csv", ","),   # comma separated file
+    (".tsv", "\t")   # tab separated file
+])
 
-#     # Act
-#     df = load_data(sample_file)
+@pytest.fixture
+def sample_data():
+    return pd.DataFrame({
+        "col1": [1, 2, 3],
+        "col2": ["a", "b", "c"]
+    })
 
-#     # Assert
-#     assert not df.empty
-#     assert list(df.columns) == ["col1", "col2"]
-#     assert df.shape == (2, 2)
+def test_load_text_files(tmp_path, suffix, sep, sample_data):
 
+    # Create temporary file
+    file_path = tmp_path / f"test{suffix}"
+    sample_data.to_csv(file_path, sep=sep, index=False)
+    
+    # Load and compare
+    df = cleaning.load_data(file_path, sep=sep)
+    pd.testing.assert_frame_equal(df, sample_data)
 
-# def test_clean_data(pt_life_expectancy_raw, pt_life_expectancy_expected):
-#     # Act
-#     cleaned = clean_data(pt_life_expectancy_raw, "PT")
+# --------------------------
+# Error / edge case tests
+# --------------------------
+def test_file_not_found(tmp_path):
+    file_path = tmp_path / "nonexistent.csv"
+    with pytest.raises(FileNotFoundError):
+        cleaning.load_data(file_path)
 
-#     # Assert
-#     pd.testing.assert_frame_equal(cleaned, pt_life_expectancy_expected)
+def test_path_is_directory(tmp_path):
+    with pytest.raises(ValueError):
+        cleaning.load_data(tmp_path)  # directory, not file
 
+def test_unsupported_extension(tmp_path):
+    file_path = tmp_path / "test.invalid"
+    file_path.touch()
+    with pytest.raises(ValueError):
+        cleaning.load_data(file_path)
 
-# def test_save_data(tmp_path):
-#     # Arrange
-#     df = pd.DataFrame({"a": [1, 2], "b": [3, 4]})
-#     output_file = tmp_path / "test.csv"
-
-#     # Act
-#     save_data(df, output_file)
-
-#     # Assert
-#     assert output_file.exists()
-#     saved_df = pd.read_csv(output_file)
-#     pd.testing.assert_frame_equal(saved_df, df)
-
-
-# def test_main(tmp_path, monkeypatch, pt_life_expectancy_raw, pt_life_expectancy_expected):
-#     # Arrange
-#     input_file = tmp_path / "input.tsv"
-#     pt_life_expectancy_raw.to_csv(input_file, sep="\t", index=False)
-
-#     output_template = str(tmp_path / "{country}_life_expectancy.csv")
-
-#     monkeypatch.setattr("your_module.DATA_PATH", input_file)
-#     monkeypatch.setattr("your_module.OUTPUT_DIR", output_template)
-
-#     # Act
-#     main("PT")
-
-#     # Assert
-#     output_file = tmp_path / "pt_life_expectancy.csv"
-#     assert output_file.exists()
-#     saved_df = pd.read_csv(output_file)
-    # pd.testing.assert_frame_equal(saved_df, pt_life_expectancy_expected)
+def test_empty_file(tmp_path):
+    file_path = tmp_path / "empty.csv"
+    file_path.touch()
+    with pytest.raises(EmptyDataError):
+        cleaning.load_data(file_path)
