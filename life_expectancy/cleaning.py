@@ -36,6 +36,7 @@ def load_data(path: str | Path, sep: str = "\t") -> pd.DataFrame:
         If the file exists but contains no data.
     """
     path = Path(path)
+    
     if not path.exists():
         raise FileNotFoundError(f"Data file not found: {path}")
     
@@ -46,19 +47,10 @@ def load_data(path: str | Path, sep: str = "\t") -> pd.DataFrame:
         raise ValueError(f"Unsupported file extension: {path.suffix} "
                          f"(allowed: .txt, .csv, .xlsx, .tsv)")
 
-    try:
-        if path.suffix.lower() == ".xlsx":
-            data = pd.read_excel(path)
-        else:  # .txt .csv or .tsv
-            data = pd.read_csv(path, sep=sep)
-    except Exception as e:
-        raise ValueError(f"Failed to parse data from {path}: {e}")
-
-    if data.empty:
-        raise EmptyDataError(f"Data file is empty: {path}")
-
-    return data
-
+    if path.suffix.lower() == ".xlsx":
+        return pd.read_excel(path)
+    else:
+        return pd.read_csv(path, sep=sep)
 
 
 def clean_data(df: pd.DataFrame, country: str) -> pd.DataFrame:
@@ -94,7 +86,7 @@ def clean_data(df: pd.DataFrame, country: str) -> pd.DataFrame:
     
     data[['unit', 'sex', 'age', 'geo']] = data.iloc[:, 0].str.split(',', expand=True)
 
-    data.drop(columns=data.columns['unit,sex,age,geo\time'], inplace = True)
+    data = data.drop(columns=[r'unit,sex,age,geo\time'])
 
     data_melted = pd.melt(
                     data,
@@ -169,26 +161,24 @@ def run_cleaning(country: str, raw_data_path: str | Path, data_path: str | Path)
     df_clean = clean_data(df, country)
     save_data(df_clean, data_path / f"{country}_life_expectancy.csv")
 
-def main():
+
+def parse_args():
     """
     Command-line entry point for cleaning life expectancy data.
 
     Parses command-line arguments for country code, raw data path, and output path; 
-    Runs the full cleaning workflow to produce a cleaned CSV file.
     """
     parser = argparse.ArgumentParser(description="Clean life expectancy data.")
+    parser.add_argument("--country", type=str, default="PT")
+    parser.add_argument("--raw-data-path", type=str, default=str(OUTPUT_DIR / "eu_life_expectancy_raw.tsv"))
+    parser.add_argument("--data-path", type=Path, default=OUTPUT_DIR)
+    return parser.parse_args()
 
-    parser.add_argument("--country",
-                        type=str,
-                        default="PT")
-    parser.add_argument("--raw-data-path",
-                        type=str,
-                        default=str(OUTPUT_DIR / "eu_life_expectancy_raw.tsv"))
-    parser.add_argument("--data-path",
-                        type=Path,
-                        default=OUTPUT_DIR)
-    args = parser.parse_args()
-
+def main():
+    """
+    Runs the full cleaning workflow to produce a cleaned CSV file.
+    """
+    args = parse_args()
     run_cleaning(args.country, args.raw_data_path, args.data_path)
 
 if __name__ == "__main__":  # pragma: no cover
