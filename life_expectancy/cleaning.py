@@ -7,7 +7,7 @@ from pandas.errors import EmptyDataError
 
 PROJECT_DIR = Path(__file__).parents[1]
 PACKAGE_DIR = PROJECT_DIR / "life_expectancy"
-FIXTURES_DIR = Path(__file__).parent / "fixtures"
+FIXTURES_DIR = Path(__file__).parent / "tests/fixtures"
 OUTPUT_DIR = PACKAGE_DIR / "data"
 
 def load_data(path: str | Path, sep: str = "\t") -> pd.DataFrame:
@@ -52,8 +52,8 @@ def load_data(path: str | Path, sep: str = "\t") -> pd.DataFrame:
     else:
         return pd.read_csv(path, sep=sep)
 
-
-def clean_data(df: pd.DataFrame, country: str) -> pd.DataFrame:
+# def clean_data(df: pd.DataFrame, country: str) -> pd.DataFrame:
+def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     """
     Transform and clean a raw Eurostat-style dataset, keeping only valid rows for a given country.
 
@@ -83,7 +83,7 @@ def clean_data(df: pd.DataFrame, country: str) -> pd.DataFrame:
     """
 
     data = df.copy()
-    
+
     data[['unit', 'sex', 'age', 'geo']] = data.iloc[:, 0].str.split(',', expand=True)
 
     data = data.drop(columns=[r'unit,sex,age,geo\time'])
@@ -105,9 +105,13 @@ def clean_data(df: pd.DataFrame, country: str) -> pd.DataFrame:
                             data_melted['value'].str.replace(
                                 r'[^0-9.]', '', regex=True), errors='coerce')
 
+    # data_cleaned = data_melted[
+    #     (~data_melted['value'].isna()) &
+    #     (data_melted['region'] == country)
+    # ]
+    
     data_cleaned = data_melted[
-        (~data_melted['value'].isna()) &
-        (data_melted['region'] == country)
+        (~data_melted['value'].isna())
     ]
 
     data_cleaned.reset_index(drop=True, inplace=True)
@@ -135,31 +139,36 @@ def save_data(df: pd.DataFrame, output_path: str | Path) -> None:
     df.to_csv(output_path, index=False)
 
 
-def run_cleaning(country: str, raw_data_path: str | Path, data_path: str | Path) -> None:
-    """
-    Loads the raw data, cleans it and filters it for a specific country, then saves it as CSV.
+# def run_cleaning(country: str, raw_data_path: str | Path, data_path: str | Path) -> None:
+#     """
+#     Loads the raw data, cleans it and filters it for a specific country, then saves it as CSV.
 
-    This function acts as the high-level entry point for the cleaning workflow:
-    - Loads the raw dataset from the given path.
-    - Cleans and filters it using the specified country code.
-    - Writes the cleaned data to the target directory with a standardized filename.
+#     This function acts as the high-level entry point for the cleaning workflow:
+#     - Loads the raw dataset from the given path.
+#     - Cleans and filters it using the specified country code.
+#     - Writes the cleaned data to the target directory with a standardized filename.
 
-    Parameters
-    ----------
-    country : str
-        ISO or region code to filter data on.
-    raw_data_path : str or pathlib.Path
-        Path to the raw input data file.
-    data_path : str or pathlib.Path
-        Directory where the cleaned CSV will be stored.
+#     Parameters
+#     ----------
+#     country : str
+#         ISO or region code to filter data on.
+#     raw_data_path : str or pathlib.Path
+#         Path to the raw input data file.
+#     data_path : str or pathlib.Path
+#         Directory where the cleaned CSV will be stored.
 
-    Returns
-    -------
-    None
-    """
+#     Returns
+#     -------
+#     None
+#     """
+#     df = load_data(raw_data_path)
+#     df_clean = clean_data(df, country)
+#     save_data(df_clean, data_path / f"{country}_life_expectancy.csv")
+
+def run_cleaning(raw_data_path: str|Path, data_path: str|Path) -> None:
     df = load_data(raw_data_path)
-    df_clean = clean_data(df, country)
-    save_data(df_clean, data_path / f"{country}_life_expectancy.csv")
+    df_clean = clean_data(df)
+    save_data(df_clean, data_path / "eu_life_expectancy.csv")
 
 
 def parse_args():
@@ -169,9 +178,13 @@ def parse_args():
     Parses command-line arguments for country code, raw data path, and output path; 
     """
     parser = argparse.ArgumentParser(description="Clean life expectancy data.")
-    parser.add_argument("--country", type=str, default="PT")
-    parser.add_argument("--raw-data-path", type=str, default=str(OUTPUT_DIR / "eu_life_expectancy_raw.tsv"))
-    parser.add_argument("--data-path", type=Path, default=OUTPUT_DIR)
+    # parser.add_argument("--country", type=str, default="PT")
+    # parser.add_argument("--raw-data-path", type=str, default=str(OUTPUT_DIR / "eu_life_expectancy_raw.tsv"))
+    parser.add_argument("--raw-data-path", type=str, default=str(FIXTURES_DIR / "eu_life_expectancy_raw.tsv"))
+
+    # parser.add_argument("--data-path", type=Path, default=OUTPUT_DIR)
+    parser.add_argument("--data-path", type=Path, default=FIXTURES_DIR)
+
     return parser.parse_args()
 
 def main():
@@ -179,7 +192,9 @@ def main():
     Runs the full cleaning workflow to produce a cleaned CSV file.
     """
     args = parse_args()
-    run_cleaning(args.country, args.raw_data_path, args.data_path)
+    # run_cleaning(args.country, args.raw_data_path, args.data_path)
+    run_cleaning(args.raw_data_path, args.data_path)
+
 
 if __name__ == "__main__":  # pragma: no cover
     main()
