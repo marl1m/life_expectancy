@@ -33,13 +33,24 @@ def pt_life_expectancy_expected() -> pd.DataFrame:
     """Fixture to load the expected output of the cleaning script"""
     return pd.read_csv(FIXTURES_DIR / "pt_life_expectancy_expected.csv")
 
+
 @pytest.fixture(scope="session")
-def input_data_expected() -> pd.DataFrame:
+def sample_input_data_expected() -> pd.DataFrame:
     """Fixture to load the expected input"""
-    
+
     sample = pd.read_csv(
                 "./life_expectancy/data/eu_life_expectancy_raw.tsv", sep="\t").sample(
-                    frac=0.1, random_state=42)
+                    frac=0.5, random_state=42)
     
     return sample.to_csv(FIXTURES_DIR / "eu_life_expectancy_raw_sample.tsv")
 
+
+@pytest.fixture(scope="session")
+def input_sample_eu_life_expectancy_expected() -> pd.DataFrame:
+    """Fixture to load the expected input of the cleaning script"""
+    return pd.read_csv(FIXTURES_DIR / "eu_life_expectancy_raw.tsv")
+
+@pytest.fixture(scope="session")
+def output_sample_eu_life_expectancy_expected() -> pd.DataFrame:
+    """Fixture to load the expected output of the cleaning script"""
+    return pd.read_csv(FIXTURES_DIR / "eu_life_expectancy_expected.csv")
