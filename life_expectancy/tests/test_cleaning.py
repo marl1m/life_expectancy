@@ -109,7 +109,7 @@ def test_splitting_first_few_collumns():
         assert col in cleaned.columns
 
 
-def test_year_melted():
+def test_year_columns_being_melted():
     raw = sample_raw()
     cleaned = cleaning.clean_data(raw, country="PT")
     assert "year" in cleaned.columns
@@ -124,10 +124,8 @@ def test_dtypes_and_removal_NAs():
     assert all(cleaned['value'].notna())
     assert pd.api.types.is_numeric_dtype(cleaned['value'])
 
-# -------------------------------
-# 4️⃣ Country filtering
-# -------------------------------
-def test_country_filtering():
+
+def test_filtering_by_country_specified():
     raw = sample_raw()
     cleaned = cleaning.clean_data(raw, country="PT")
     assert all(cleaned['region'] == "PT")
